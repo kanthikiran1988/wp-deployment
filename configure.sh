@@ -183,8 +183,11 @@ generate_wordpress_config() {
     local wp_mem=$((total_mem * 30 / 100))  # 30% of total memory for WordPress
     local wp_max_mem=$((total_mem * 50 / 100))  # 50% of total memory for max limit
 
+    # Create the WordPress configuration with proper escaping and formatting
     echo "# WordPress Configuration"
     echo "WORDPRESS_DEBUG=$([ "$ENV_TYPE" = "development" ] && echo "1" || echo "0")"
+    
+    # Start of WORDPRESS_CONFIG_EXTRA with proper escaping
     echo "WORDPRESS_CONFIG_EXTRA=\"define('WP_MEMORY_LIMIT', '${wp_mem}M');"
     echo "define('WP_MAX_MEMORY_LIMIT', '${wp_max_mem}M');"
     echo "define('AUTOMATIC_UPDATER_DISABLED', true);"
@@ -205,6 +208,13 @@ generate_wordpress_config() {
         echo "define('DISALLOW_FILE_MODS', true);"
     fi
     echo "\""
+
+    # Add separate environment variables for docker-compose
+    echo "WP_MEMORY_LIMIT=${wp_mem}M"
+    echo "WP_MAX_MEMORY_LIMIT=${wp_max_mem}M"
+    echo "WP_CACHE=true"
+    echo "WP_REDIS_HOST=redis"
+    echo "WP_REDIS_PORT=6379"
 }
 
 # Main script starts here
