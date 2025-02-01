@@ -183,14 +183,17 @@ generate_wordpress_config() {
     local wp_mem=$((total_mem * 30 / 100))  # 30% of total memory for WordPress
 
     echo "# WordPress Configuration"
-    echo "WORDPRESS_DEBUG=${ENV_TYPE:-production}"
-    echo "WP_MEMORY_LIMIT=$((wp_mem))M"
-    echo "WP_MAX_MEMORY_LIMIT=$((wp_mem * 2))M"
+    echo "WORDPRESS_DEBUG=$([ "$ENV_TYPE" = "development" ] && echo "1" || echo "0")"
+    echo "WP_MEMORY_LIMIT=$((TOTAL_MEM * 30 / 100))M"
+    echo "WP_MAX_MEMORY_LIMIT=$((TOTAL_MEM * 50 / 100))M"
     echo "WP_CACHE=true"
     echo "WP_REDIS_HOST=redis"
     echo "WP_REDIS_PORT=6379"
-    echo "WP_ENVIRONMENT_TYPE=${ENV_TYPE:-production}"
+    echo "WP_ENVIRONMENT_TYPE=${ENV_TYPE}"
     echo "AUTOMATIC_UPDATER_DISABLED=true"
+    echo "WP_MAX_EXECUTION_TIME=300"
+    echo "WP_UPLOAD_MAX_FILESIZE=$((TOTAL_MEM / 20))M"
+    echo "WP_POST_MAX_SIZE=$((TOTAL_MEM / 16))M"
 }
 
 # Main script starts here
