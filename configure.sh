@@ -169,7 +169,39 @@ DOMAIN_EMAIL=$(prompt_with_default "Enter the email address for SSL certificates
 echo -e "\n${BOLD}Step 3: Environment Configuration${NORMAL}"
 echo "----------------------------------------"
 echo -e "${BLUE}Select the environment type for your WordPress installation:${NORMAL}"
-ENV_TYPE=$(prompt_for_environment)
+
+# Display options first
+echo -e "${BLUE}Available options:${NORMAL}"
+echo "   1) Production (optimized for performance, SSL enabled)"
+echo "   2) Staging (testing environment with staging SSL)"
+echo "   3) Development (debugging enabled, no SSL required)"
+echo -ne "${GREEN}Please enter 1, 2, or 3 and press Enter [1]:${NORMAL} "
+
+# Read the choice directly
+read -r choice
+
+# Process the choice
+case "${choice:-1}" in
+    1) 
+        ENV_TYPE="production"
+        echo -e "${BLUE}Selected:${NORMAL} Production Environment"
+        ;;
+    2)
+        ENV_TYPE="staging"
+        echo -e "${BLUE}Selected:${NORMAL} Staging Environment"
+        ;;
+    3)
+        ENV_TYPE="development"
+        echo -e "${BLUE}Selected:${NORMAL} Development Environment"
+        ;;
+    *)
+        ENV_TYPE="production"
+        echo -e "${RED}Invalid choice. Using default: Production${NORMAL}"
+        ;;
+esac
+
+# Add a newline for better formatting
+echo ""
 
 # Database Configuration
 echo -e "\n${BOLD}Step 4: Database Configuration${NORMAL}"
