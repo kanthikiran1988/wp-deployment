@@ -181,19 +181,30 @@ calculate_nginx_settings() {
 generate_wordpress_config() {
     local total_mem=$1
     local wp_mem=$((total_mem * 30 / 100))  # 30% of total memory for WordPress
+    local wp_max_mem=$((total_mem * 50 / 100))  # 50% of total memory for max limit
 
     echo "# WordPress Configuration"
     echo "WORDPRESS_DEBUG=$([ "$ENV_TYPE" = "development" ] && echo "1" || echo "0")"
-    echo "WP_MEMORY_LIMIT=$((TOTAL_MEM * 30 / 100))M"
-    echo "WP_MAX_MEMORY_LIMIT=$((TOTAL_MEM * 50 / 100))M"
-    echo "WP_CACHE=true"
-    echo "WP_REDIS_HOST=redis"
-    echo "WP_REDIS_PORT=6379"
-    echo "WP_ENVIRONMENT_TYPE=${ENV_TYPE}"
-    echo "AUTOMATIC_UPDATER_DISABLED=true"
-    echo "WP_MAX_EXECUTION_TIME=300"
-    echo "WP_UPLOAD_MAX_FILESIZE=$((TOTAL_MEM / 20))M"
-    echo "WP_POST_MAX_SIZE=$((TOTAL_MEM / 16))M"
+    echo "WORDPRESS_CONFIG_EXTRA=\"define('WP_MEMORY_LIMIT', '${wp_mem}M');"
+    echo "define('WP_MAX_MEMORY_LIMIT', '${wp_max_mem}M');"
+    echo "define('AUTOMATIC_UPDATER_DISABLED', true);"
+    echo "define('WP_CACHE', true);"
+    echo "define('WP_REDIS_HOST', 'redis');"
+    echo "define('WP_REDIS_PORT', 6379);"
+    if [ "$ENV_TYPE" = "development" ]; then
+        echo "define('WP_DEBUG', true);"
+        echo "define('WP_DEBUG_LOG', true);"
+        echo "define('WP_DEBUG_DISPLAY', true);"
+    else
+        echo "define('WP_DEBUG', false);"
+        echo "define('WP_DEBUG_LOG', false);"
+        echo "define('WP_DEBUG_DISPLAY', false);"
+    fi
+    echo "define('DISALLOW_FILE_EDIT', true);"
+    if [ "$ENV_TYPE" = "production" ]; then
+        echo "define('DISALLOW_FILE_MODS', true);"
+    fi
+    echo "\""
 }
 
 # Main script starts here

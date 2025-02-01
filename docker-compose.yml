@@ -15,6 +15,7 @@ services:
       - WORDPRESS_ADMIN_USER=${WORDPRESS_ADMIN_USER}
       - WORDPRESS_ADMIN_PASSWORD=${WORDPRESS_ADMIN_PASSWORD}
       - WORDPRESS_ADMIN_EMAIL=${WORDPRESS_ADMIN_EMAIL}
+      - WORDPRESS_CONFIG_EXTRA=${WORDPRESS_CONFIG_EXTRA}
       - WP_MEMORY_LIMIT=${WP_MEMORY_LIMIT}
       - WP_MAX_MEMORY_LIMIT=${WP_MAX_MEMORY_LIMIT}
       - WP_CACHE=${WP_CACHE}
@@ -26,7 +27,6 @@ services:
       - ./wp-content:/var/www/html/wp-content
       - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini:ro
       - ./wordpress/wp-init.sh:/docker-entrypoint-initwp.sh:ro
-      - ./wordpress/wp-config-extra.php:/var/www/html/wp-config-extra.php:ro
     networks:
       - wordpress-network
     depends_on:
