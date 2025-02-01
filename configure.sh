@@ -8,6 +8,44 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
 
+# Function to check and configure Docker permissions
+setup_docker_permissions() {
+    echo -e "\n${BOLD}Checking Docker Permissions${NORMAL}"
+    echo "----------------------------------------"
+
+    # Check if Docker is installed
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}Error: Docker is not installed${NORMAL}"
+        exit 1
+    fi
+
+    # Check if user is in docker group
+    if ! groups $USER | grep &>/dev/null '\bdocker\b'; then
+        echo -e "${YELLOW}Adding user to docker group...${NORMAL}"
+        if ! sudo usermod -aG docker $USER; then
+            echo -e "${RED}Failed to add user to docker group${NORMAL}"
+            echo "Please run: sudo usermod -aG docker $USER"
+            echo "Then log out and log back in for changes to take effect."
+            exit 1
+        fi
+        echo -e "${GREEN}✓ User added to docker group${NORMAL}"
+        echo -e "${YELLOW}Please log out and log back in for changes to take effect${NORMAL}"
+        echo -e "After logging back in, run this script again."
+        exit 0
+    else
+        echo -e "${GREEN}✓ Docker permissions are correctly configured${NORMAL}"
+    fi
+
+    # Test Docker access
+    if ! docker info &>/dev/null; then
+        echo -e "${RED}Error: Cannot connect to Docker daemon${NORMAL}"
+        echo "If you just added the docker group, you need to log out and log back in."
+        echo "Otherwise, make sure the Docker daemon is running:"
+        echo "sudo systemctl start docker"
+        exit 1
+    fi
+}
+
 # Function to get total system memory in MB
 get_total_memory() {
     local total_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
@@ -126,6 +164,7 @@ calculate_nginx_settings() {
 }
 
 # Main script starts here
+setup_docker_permissions
 clear
 echo -e "${BOLD}WordPress Docker Configuration Generator${NORMAL}"
 echo -e "${BLUE}This script will help you configure your WordPress deployment${NORMAL}"
@@ -272,7 +311,7 @@ echo -e "Generating .env file..."
     echo "SSL_KEY_SIZE=4096"
     echo
     echo "# Nginx Configuration"
-    echo "NGINX_RESOLVER=8.8.8.8 8.8.4.4"
+    echo "NGINX_RESOLVER=\"8.8.8.8 8.8.4.4\""
     echo "NGINX_RESOLVER_TIMEOUT=5s"
     echo "SSL_SESSION_TIMEOUT=1d"
     echo "SSL_SESSION_CACHE=shared:SSL:50m"
