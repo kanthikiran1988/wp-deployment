@@ -1,15 +1,20 @@
 #!/bin/bash
 
 # Wait for MySQL to be ready
-until wp db check --allow-root 2>/dev/null; do
-    echo "Waiting for MySQL to be ready..."
-    sleep 2
+echo "Waiting for MySQL to be ready..."
+while ! mysqladmin ping -h"$WORDPRESS_DB_HOST" --silent; do
+    sleep 1
 done
+
+# Start PHP-FPM in the background
+php-fpm -D
+
+# Wait for PHP-FPM to start
+sleep 2
 
 # Check if WordPress is already installed
 if ! wp core is-installed --allow-root; then
     echo "Installing WordPress..."
-    
     # Install WordPress
     wp core install \
         --url="https://${DOMAIN}" \
@@ -20,13 +25,7 @@ if ! wp core is-installed --allow-root; then
         --skip-email \
         --allow-root
 
-    # Configure WordPress settings
-    wp option update blogname "${DOMAIN}" --allow-root
-    wp option update blogdescription "My WordPress Site" --allow-root
-    wp option update blog_public 1 --allow-root
-    wp option update timezone_string "UTC" --allow-root
-    
-    # Install and activate Redis object cache
+    # Install and activate Redis Object Cache plugin
     wp plugin install redis-cache --activate --allow-root
     wp redis enable --allow-root
 
@@ -35,5 +34,5 @@ else
     echo "WordPress is already installed."
 fi
 
-# Start PHP-FPM
+# Keep container running
 php-fpm 
