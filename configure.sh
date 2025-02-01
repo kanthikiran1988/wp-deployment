@@ -6,6 +6,7 @@ NORMAL='\033[0m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
+YELLOW='\033[0;33m'
 
 # Function to get total system memory in MB
 get_total_memory() {
@@ -24,9 +25,53 @@ prompt_with_default() {
     local default=$2
     local response
 
-    echo -e "${BOLD}${prompt} [${default}]:${NORMAL} "
-    read response
-    echo "${response:-$default}"
+    while true; do
+        echo -e "\n${YELLOW}➤${NORMAL} ${prompt}"
+        echo -e "${BLUE}Default value:${NORMAL} ${default}"
+        echo -ne "${GREEN}Enter your value (or press Enter for default):${NORMAL} "
+        read response
+        
+        if [ -z "$response" ]; then
+            echo -e "${BLUE}Using default value:${NORMAL} ${default}"
+            echo "${default}"
+            break
+        else
+            echo -e "${BLUE}Using value:${NORMAL} ${response}"
+            echo "${response}"
+            break
+        fi
+    done
+}
+
+# Function to prompt for environment type
+prompt_for_environment() {
+    local env_type
+    while true; do
+        echo -e "\n${YELLOW}➤${NORMAL} Select the environment type:"
+        echo "   1) Production (optimized for performance, SSL enabled)"
+        echo "   2) Staging (testing environment with staging SSL)"
+        echo "   3) Development (debugging enabled, no SSL required)"
+        echo -ne "${GREEN}Enter your choice (1-3) [1]:${NORMAL} "
+        read choice
+        
+        case "${choice:-1}" in
+            1) env_type="production"
+               echo -e "${BLUE}Selected:${NORMAL} Production Environment"
+               break
+               ;;
+            2) env_type="staging"
+               echo -e "${BLUE}Selected:${NORMAL} Staging Environment"
+               break
+               ;;
+            3) env_type="development"
+               echo -e "${BLUE}Selected:${NORMAL} Development Environment"
+               break
+               ;;
+            *) echo -e "${RED}Invalid choice. Please select 1, 2, or 3${NORMAL}"
+               ;;
+        esac
+    done
+    echo "$env_type"
 }
 
 # Function to calculate optimal MySQL/MariaDB settings based on available memory
@@ -71,37 +116,60 @@ calculate_nginx_settings() {
     echo "client_max_body_size=${client_max_body_size}M"
 }
 
-# Main configuration script
+clear
 echo -e "${BOLD}WordPress Docker Configuration Generator${NORMAL}"
-echo "----------------------------------------"
+echo -e "${BLUE}This script will help you configure your WordPress deployment${NORMAL}"
+echo "=========================================================="
 
 # Get system resources
+echo -e "\n${BOLD}Step 1: System Resource Detection${NORMAL}"
+echo "----------------------------------------"
 TOTAL_MEM=$(get_total_memory)
 CPU_CORES=$(get_cpu_cores)
 
 echo -e "${BLUE}Detected System Resources:${NORMAL}"
-echo "Total Memory: ${TOTAL_MEM}MB"
-echo "CPU Cores: ${CPU_CORES}"
-echo
+echo "• Total Memory: ${TOTAL_MEM}MB"
+echo "• CPU Cores: ${CPU_CORES}"
+echo -e "${GREEN}✓ System resources detected successfully${NORMAL}"
 
 # Domain Configuration
-echo -e "${BOLD}Domain Configuration${NORMAL}"
-DOMAIN=$(prompt_with_default "Enter your domain name" "example.com")
-DOMAIN_WWW=$(prompt_with_default "Enter www domain" "www.${DOMAIN}")
-DOMAIN_EMAIL=$(prompt_with_default "Enter email for SSL certificates" "admin@${DOMAIN}")
+echo -e "\n${BOLD}Step 2: Domain Configuration${NORMAL}"
+echo "----------------------------------------"
+echo -e "${BLUE}Please provide your domain information:${NORMAL}"
+DOMAIN=$(prompt_with_default "What is your main domain name? (without www)" "example.com")
+DOMAIN_WWW=$(prompt_with_default "What is your www domain?" "www.${DOMAIN}")
+DOMAIN_EMAIL=$(prompt_with_default "What email should be used for SSL certificates?" "admin@${DOMAIN}")
 
 # Environment Type
-echo -e "\n${BOLD}Environment Configuration${NORMAL}"
-ENV_TYPE=$(prompt_with_default "Enter environment type (production/staging/development)" "production")
+echo -e "\n${BOLD}Step 3: Environment Configuration${NORMAL}"
+echo "----------------------------------------"
+ENV_TYPE=$(prompt_for_environment)
 
-# Calculate resource allocations
-echo -e "\n${BOLD}Calculating optimal resource allocations...${NORMAL}"
+# Database Configuration
+echo -e "\n${BOLD}Step 4: Database Configuration${NORMAL}"
+echo "----------------------------------------"
+echo -e "${BLUE}Configuring MySQL with optimal settings for your hardware:${NORMAL}"
+echo -e "• Allocating 40% of total memory ($(((TOTAL_MEM * 40 / 100)))MB) for MySQL"
 MYSQL_SETTINGS=$(calculate_mysql_settings $TOTAL_MEM)
+
+# PHP Configuration
+echo -e "\n${BOLD}Step 5: PHP Configuration${NORMAL}"
+echo "----------------------------------------"
+echo -e "${BLUE}Configuring PHP with optimal settings for your hardware:${NORMAL}"
+echo -e "• Allocating 30% of total memory ($(((TOTAL_MEM * 30 / 100)))MB) for PHP"
 PHP_SETTINGS=$(calculate_php_settings $TOTAL_MEM)
+
+# Nginx Configuration
+echo -e "\n${BOLD}Step 6: Nginx Configuration${NORMAL}"
+echo "----------------------------------------"
+echo -e "${BLUE}Configuring Nginx with optimal settings for your hardware:${NORMAL}"
 NGINX_SETTINGS=$(calculate_nginx_settings $TOTAL_MEM $CPU_CORES)
 
-# Generate .env file
-echo -e "\n${BOLD}Generating .env file...${NORMAL}"
+# Generate Configurations
+echo -e "\n${BOLD}Step 7: Generating Configuration Files${NORMAL}"
+echo "----------------------------------------"
+
+echo -e "Generating .env file..."
 cat > .env << EOL
 # Environment Type
 WP_ENVIRONMENT_TYPE=${ENV_TYPE}
@@ -153,9 +221,9 @@ $(for key in AUTH_KEY SECURE_AUTH_KEY LOGGED_IN_KEY NONCE_KEY AUTH_SALT SECURE_A
     echo "${key}=$(openssl rand -base64 48)"
 done)
 EOL
+echo -e "${GREEN}✓ .env file generated${NORMAL}"
 
-# Generate MySQL configuration
-echo -e "\n${BOLD}Generating MySQL configuration...${NORMAL}"
+echo -e "Generating MySQL configuration..."
 mkdir -p mysql/conf.d
 cat > mysql/conf.d/my.cnf << EOL
 [mysqld]
@@ -211,9 +279,9 @@ default-character-set = utf8mb4
 [mysql]
 default-character-set = utf8mb4
 EOL
+echo -e "${GREEN}✓ MySQL configuration generated${NORMAL}"
 
-# Generate PHP configuration
-echo -e "\n${BOLD}Generating PHP configuration...${NORMAL}"
+echo -e "Generating PHP configuration..."
 mkdir -p php
 cat > php/php.ini << EOL
 [PHP]
@@ -264,19 +332,31 @@ allow_url_fopen = Off
 allow_url_include = Off
 disable_functions = exec,passthru,shell_exec,system,proc_open,popen,curl_multi_exec,parse_ini_file,show_source
 EOL
+echo -e "${GREEN}✓ PHP configuration generated${NORMAL}"
 
 # Create necessary directories
+echo -e "\n${BOLD}Step 8: Creating Directory Structure${NORMAL}"
+echo "----------------------------------------"
+echo "Creating required directories..."
 mkdir -p {nginx,certbot/{conf,data,logs},wp-content}
+echo -e "${GREEN}✓ Directories created${NORMAL}"
 
-echo -e "\n${GREEN}Configuration completed successfully!${NORMAL}"
-echo -e "Please review the generated configurations in:"
-echo "- .env"
-echo "- mysql/conf.d/my.cnf"
-echo "- php/php.ini"
+# Final Summary
+echo -e "\n${BOLD}Configuration Complete!${NORMAL}"
+echo "=========================================================="
+echo -e "${GREEN}The following files have been generated:${NORMAL}"
+echo "• .env (environment variables and secrets)"
+echo "• mysql/conf.d/my.cnf (MySQL configuration)"
+echo "• php/php.ini (PHP configuration)"
 echo
-echo -e "${BOLD}Next steps:${NORMAL}"
-echo "1. Review and adjust the generated configurations if needed"
-echo "2. Run './init-letsencrypt.sh' to set up SSL certificates"
-echo "3. Start your containers with 'docker-compose up -d'"
+echo -e "${BOLD}Next Steps:${NORMAL}"
+echo "1. Review the generated configurations in the files above"
+echo "2. Run: ./init-letsencrypt.sh to set up SSL certificates"
+echo "3. Run: docker-compose up -d to start your containers"
 echo
-echo -e "${RED}Note: Keep your .env file secure as it contains sensitive information${NORMAL}" 
+echo -e "${RED}Important:${NORMAL}"
+echo "• Keep your .env file secure - it contains sensitive information"
+echo "• Make sure to backup your configuration files"
+echo "• For production deployment, review security settings"
+echo
+echo -e "${BLUE}Need help? Check the README.md file for more information${NORMAL}" 
