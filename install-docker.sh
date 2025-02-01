@@ -27,6 +27,15 @@ fi
 echo -e "${BOLD}Docker Installation Script for Ubuntu 24.04${NORMAL}"
 echo "=========================================================="
 
+# Clean up any previous Docker installations
+echo -e "\n${BLUE}Cleaning up previous Docker installations...${NORMAL}"
+systemctl stop docker || true
+systemctl disable docker || true
+rm -rf /var/lib/docker
+rm -rf /var/run/docker.sock
+rm -rf /etc/docker
+check_status
+
 # Remove any old Docker installations
 echo -e "\n${BLUE}Removing old Docker installations if they exist...${NORMAL}"
 for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
@@ -47,9 +56,8 @@ check_status
 # Create keyrings directory and import Docker's GPG key
 echo -e "\n${BLUE}Setting up Docker GPG key...${NORMAL}"
 install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-gpg --dearmor -o /etc/apt/keyrings/docker.gpg /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.gpg /etc/apt/keyrings/docker.asc
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
 
 # Add the repository to Apt sources (using jammy for compatibility)
 echo -e "\n${BLUE}Adding Docker repository...${NORMAL}"
@@ -70,7 +78,33 @@ check_status
 
 # Start and enable Docker service
 echo -e "\n${BLUE}Starting Docker service...${NORMAL}"
+# Stop the service if it's running
+systemctl stop docker || true
+# Reset failed state if any
+systemctl reset-failed docker.service || true
+# Start the service
 systemctl start docker
+if ! systemctl is-active --quiet docker; then
+    echo -e "${RED}Docker service failed to start. Checking logs...${NORMAL}"
+    journalctl -xeu docker.service
+    echo -e "\n${YELLOW}Attempting to fix common issues...${NORMAL}"
+    
+    # Create required directories
+    mkdir -p /var/lib/docker
+    
+    # Fix permissions
+    chown root:root /var/lib/docker
+    chmod 701 /var/lib/docker
+    
+    # Reload daemon and restart service
+    systemctl daemon-reload
+    systemctl start docker
+    
+    if ! systemctl is-active --quiet docker; then
+        echo -e "${RED}Failed to start Docker service. Please check the logs above for details.${NORMAL}"
+        exit 1
+    fi
+fi
 systemctl enable docker
 check_status
 
@@ -86,6 +120,20 @@ docker compose version
 
 echo -e "\n${GREEN}Docker installation completed successfully!${NORMAL}"
 echo -e "${YELLOW}Please log out and log back in for the docker group changes to take effect.${NORMAL}"
+
+# Final verification
+echo -e "\n${BLUE}Performing final verification...${NORMAL}"
+if systemctl is-active --quiet docker; then
+    echo -e "${GREEN}✓ Docker service is running${NORMAL}"
+    docker info || true
+else
+    echo -e "${RED}Warning: Docker service is not running${NORMAL}"
+    echo "Please check the service status with:"
+    echo -e "${BLUE}systemctl status docker${NORMAL}"
+    echo "And view the logs with:"
+    echo -e "${BLUE}journalctl -xeu docker.service${NORMAL}"
+fi
+
 echo -e "\nTo verify installation after logging back in, run:"
 echo -e "${BLUE}docker run hello-world${NORMAL}"
 echo -e "\nTo check Docker service status:"
