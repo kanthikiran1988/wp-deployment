@@ -70,17 +70,15 @@ services:
     environment:
       - DOMAIN=${DOMAIN}
       - DOMAIN_WWW=${DOMAIN_WWW}
-      - SSL_SESSION_TIMEOUT=${SSL_SESSION_TIMEOUT}
-      - SSL_SESSION_CACHE=${SSL_SESSION_CACHE}
-      - NGINX_RESOLVER=${NGINX_RESOLVER}
-      - NGINX_RESOLVER_TIMEOUT=${NGINX_RESOLVER_TIMEOUT}
+      - SSL_SESSION_TIMEOUT=${SSL_SESSION_TIMEOUT:-1d}
+      - SSL_SESSION_CACHE=${SSL_SESSION_CACHE:-"shared:SSL:50m"}
     ports:
       - "${NGINX_HTTP_PORT:-80}:80"
       - "${NGINX_HTTPS_PORT:-443}:443"
     volumes:
       - ./wordpress:/var/www/html:ro
       - ./wp-content:/var/www/html/wp-content:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/conf.d:/etc/nginx/templates:ro
       - ./certbot/conf:/etc/nginx/ssl:ro
       - ./certbot/data:/var/www/certbot:ro
       - ./nginx/logs:/var/log/nginx
@@ -97,7 +95,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    command: /bin/sh -c "envsubst '$$DOMAIN $$DOMAIN_WWW $$SSL_SESSION_TIMEOUT $$SSL_SESSION_CACHE' < /etc/nginx/templates/default.conf > /etc/nginx/conf.d/default.conf && while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
 
   certbot:
     image: certbot/certbot:latest
