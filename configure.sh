@@ -47,28 +47,28 @@ prompt_with_default() {
 prompt_for_environment() {
     local env_type
     while true; do
-        echo -e "\n${YELLOW}➤${NORMAL} Please select your environment type:"
-        echo -e "${BLUE}Available options:${NORMAL}"
-        echo "   1) Production (optimized for performance, SSL enabled)"
-        echo "   2) Staging (testing environment with staging SSL)"
-        echo "   3) Development (debugging enabled, no SSL required)"
-        echo -ne "${GREEN}Please enter 1, 2, or 3 and press Enter [1]:${NORMAL} "
+        printf "\n${YELLOW}➤${NORMAL} Please select your environment type:\n"
+        printf "${BLUE}Available options:${NORMAL}\n"
+        printf "   1) Production (optimized for performance, SSL enabled)\n"
+        printf "   2) Staging (testing environment with staging SSL)\n"
+        printf "   3) Development (debugging enabled, no SSL required)\n"
+        printf "${GREEN}Please enter 1, 2, or 3 and press Enter [1]:${NORMAL} "
         read choice
         
         case "${choice:-1}" in
             1) env_type="production"
-               echo -e "${BLUE}Selected:${NORMAL} Production Environment"
+               printf "${BLUE}Selected:${NORMAL} Production Environment\n"
                break
                ;;
             2) env_type="staging"
-               echo -e "${BLUE}Selected:${NORMAL} Staging Environment"
+               printf "${BLUE}Selected:${NORMAL} Staging Environment\n"
                break
                ;;
             3) env_type="development"
-               echo -e "${BLUE}Selected:${NORMAL} Development Environment"
+               printf "${BLUE}Selected:${NORMAL} Development Environment\n"
                break
                ;;
-            *) echo -e "${RED}Invalid choice. Please select 1, 2, or 3${NORMAL}"
+            *) printf "${RED}Invalid choice. Please select 1, 2, or 3${NORMAL}\n"
                ;;
         esac
     done
@@ -159,8 +159,8 @@ echo -e "\n${YELLOW}This email will be used for SSL certificate notifications${N
 DOMAIN_EMAIL=$(prompt_with_default "Enter the email address for SSL certificates" "admin@${DOMAIN}")
 
 # Environment Type
-echo -e "\n${BOLD}Step 3: Environment Configuration${NORMAL}"
-echo "----------------------------------------"
+printf "\n${BOLD}Step 3: Environment Configuration${NORMAL}\n"
+printf "----------------------------------------\n"
 ENV_TYPE=$(prompt_for_environment)
 
 # Database Configuration
