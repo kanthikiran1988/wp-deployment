@@ -177,6 +177,22 @@ calculate_nginx_settings() {
     echo "client_max_body_size=${client_max_body_size}M"
 }
 
+# Function to generate WordPress configuration
+generate_wordpress_config() {
+    local total_mem=$1
+    local wp_mem=$((total_mem * 30 / 100))  # 30% of total memory for WordPress
+
+    echo "# WordPress Configuration"
+    echo "WORDPRESS_DEBUG=${ENV_TYPE:-production}"
+    echo "WP_MEMORY_LIMIT=$((wp_mem))M"
+    echo "WP_MAX_MEMORY_LIMIT=$((wp_mem * 2))M"
+    echo "WP_CACHE=true"
+    echo "WP_REDIS_HOST=redis"
+    echo "WP_REDIS_PORT=6379"
+    echo "WP_ENVIRONMENT_TYPE=${ENV_TYPE:-production}"
+    echo "AUTOMATIC_UPDATER_DISABLED=true"
+}
+
 # Main script starts here
 setup_docker_permissions
 clear
@@ -285,6 +301,10 @@ echo -e "\n${BOLD}Step 6: Nginx Configuration${NORMAL}"
 echo "----------------------------------------"
 echo -e "${BLUE}Configuring Nginx with optimal settings for your hardware:${NORMAL}"
 NGINX_SETTINGS=$(calculate_nginx_settings $TOTAL_MEM $CPU_CORES)
+
+# Calculate WordPress settings
+echo -e "\n${BOLD}Calculating WordPress settings...${NORMAL}"
+WP_SETTINGS=$(generate_wordpress_config $TOTAL_MEM)
 
 # Generate Configurations
 echo -e "\n${BOLD}Step 7: Generating Configuration Files${NORMAL}"
