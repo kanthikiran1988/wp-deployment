@@ -23,26 +23,25 @@ get_cpu_cores() {
 prompt_with_default() {
     local prompt=$1
     local default=$2
-    local response
+    local value
 
-    while true; do
-        echo -e "\n${YELLOW}➤${NORMAL} ${prompt}"
-        echo -e "${BLUE}Default value:${NORMAL} ${default}"
-        echo -ne "${GREEN}Type your value and press Enter (or just press Enter for default):${NORMAL} "
-        read response
-        
-        if [ -z "$response" ]; then
-            echo -e "${BLUE}Using default value:${NORMAL} ${default}"
-            echo "${default}" >&2
-            response="$default"
-            break
-        else
-            echo -e "${BLUE}Using value:${NORMAL} ${response}"
-            echo "${response}" >&2
-            break
-        fi
-    done
-    printf "%s" "$response"
+    # Print prompts to stderr so they don't get captured in variable assignment
+    echo -e "\n${YELLOW}➤${NORMAL} ${prompt}" >&2
+    echo -e "${BLUE}Default value:${NORMAL} ${default}" >&2
+    echo -ne "${GREEN}Type your value and press Enter (or just press Enter for default):${NORMAL} " >&2
+    
+    read -r response
+    
+    if [ -z "$response" ]; then
+        echo -e "${BLUE}Using default value:${NORMAL} ${default}" >&2
+        value="$default"
+    else
+        echo -e "${BLUE}Using value:${NORMAL} ${response}" >&2
+        value="$response"
+    fi
+
+    # Return only the actual value, without any prompts or messages
+    printf '%s' "$value"
 }
 
 # Function to prompt for environment type with clear options
@@ -159,7 +158,11 @@ echo -e "\n${BOLD}Step 2: Domain Configuration${NORMAL}"
 echo "----------------------------------------"
 echo -e "${BLUE}Please provide your domain information:${NORMAL}"
 echo -e "${YELLOW}Example: If your website is https://example.com, just enter 'example.com'${NORMAL}"
+
+# Store the values in variables without capturing the prompts
 DOMAIN=$(prompt_with_default "Enter your main domain name (without www)" "example.com")
+DOMAIN_WWW=$(prompt_with_default "Enter your www domain (press Enter to use www.${DOMAIN})" "www.${DOMAIN}")
+DOMAIN_EMAIL=$(prompt_with_default "Enter the email address for SSL certificates" "admin@${DOMAIN}")
 
 echo -e "\n${YELLOW}The www subdomain will be automatically configured${NORMAL}"
 DOMAIN_WWW=$(prompt_with_default "Enter your www domain (press Enter to use www.${DOMAIN})" "www.${DOMAIN}")
@@ -170,7 +173,7 @@ DOMAIN_EMAIL=$(prompt_with_default "Enter the email address for SSL certificates
 echo -e "\n${YELLOW}WordPress Admin Configuration${NORMAL}"
 WP_ADMIN_USER=$(prompt_with_default "Enter WordPress admin username" "admin")
 WP_ADMIN_PASSWORD=$(openssl rand -base64 12)
-WP_ADMIN_EMAIL=$(prompt_with_default "Enter WordPress admin email" "$DOMAIN_EMAIL")
+WP_ADMIN_EMAIL=$(prompt_with_default "Enter WordPress admin email" "${DOMAIN_EMAIL}")
 
 # Environment Type
 echo -e "\n${BOLD}Step 3: Environment Configuration${NORMAL}"
@@ -257,12 +260,12 @@ echo -e "Generating .env file..."
     echo
     echo "# WordPress Configuration"
     echo "WORDPRESS_DEBUG=$([ "$ENV_TYPE" = "development" ] && echo "1" || echo "0")"
-    echo "WORDPRESS_CONFIG_EXTRA=define('WP_MEMORY_LIMIT', '${PHP_SETTINGS%% *}');\\n\
-  define('WP_MAX_MEMORY_LIMIT', '$((TOTAL_MEM / 2))M');\\n\
-  define('AUTOMATIC_UPDATER_DISABLED', true);\\n\
-  define('WP_CACHE', true);\\n\
-  define('WP_REDIS_HOST', 'redis');\\n\
-  define('WP_REDIS_PORT', 6379);"
+    echo "WORDPRESS_CONFIG_EXTRA=\"define('WP_MEMORY_LIMIT', '${PHP_SETTINGS%% *}');"
+    echo "define('WP_MAX_MEMORY_LIMIT', '$((TOTAL_MEM / 2))M');"
+    echo "define('AUTOMATIC_UPDATER_DISABLED', true);"
+    echo "define('WP_CACHE', true);"
+    echo "define('WP_REDIS_HOST', 'redis');"
+    echo "define('WP_REDIS_PORT', 6379);\""
     echo
     echo "# SSL Configuration"
     echo "SSL_STAGING=$([ "$ENV_TYPE" = "production" ] && echo "0" || echo "1")"
