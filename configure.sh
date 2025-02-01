@@ -28,30 +28,31 @@ prompt_with_default() {
     while true; do
         echo -e "\n${YELLOW}➤${NORMAL} ${prompt}"
         echo -e "${BLUE}Default value:${NORMAL} ${default}"
-        echo -ne "${GREEN}Enter your value (or press Enter for default):${NORMAL} "
+        echo -ne "${GREEN}Type your value and press Enter (or just press Enter for default):${NORMAL} "
         read response
         
         if [ -z "$response" ]; then
             echo -e "${BLUE}Using default value:${NORMAL} ${default}"
-            echo "${default}"
+            response="$default"
             break
         else
             echo -e "${BLUE}Using value:${NORMAL} ${response}"
-            echo "${response}"
             break
         fi
     done
+    echo "$response"
 }
 
-# Function to prompt for environment type
+# Function to prompt for environment type with clear options
 prompt_for_environment() {
     local env_type
     while true; do
-        echo -e "\n${YELLOW}➤${NORMAL} Select the environment type:"
+        echo -e "\n${YELLOW}➤${NORMAL} Please select your environment type:"
+        echo -e "${BLUE}Available options:${NORMAL}"
         echo "   1) Production (optimized for performance, SSL enabled)"
         echo "   2) Staging (testing environment with staging SSL)"
         echo "   3) Development (debugging enabled, no SSL required)"
-        echo -ne "${GREEN}Enter your choice (1-3) [1]:${NORMAL} "
+        echo -ne "${GREEN}Please enter 1, 2, or 3 and press Enter [1]:${NORMAL} "
         read choice
         
         case "${choice:-1}" in
@@ -116,6 +117,7 @@ calculate_nginx_settings() {
     echo "client_max_body_size=${client_max_body_size}M"
 }
 
+# Main script starts here
 clear
 echo -e "${BOLD}WordPress Docker Configuration Generator${NORMAL}"
 echo -e "${BLUE}This script will help you configure your WordPress deployment${NORMAL}"
@@ -132,13 +134,29 @@ echo "• Total Memory: ${TOTAL_MEM}MB"
 echo "• CPU Cores: ${CPU_CORES}"
 echo -e "${GREEN}✓ System resources detected successfully${NORMAL}"
 
+if [ $TOTAL_MEM -lt 1024 ]; then
+    echo -e "\n${RED}⚠️ Warning: Your system has less than 1GB of RAM (${TOTAL_MEM}MB)${NORMAL}"
+    echo -e "This might affect WordPress performance. Recommended minimum is 2GB RAM."
+    echo -ne "${YELLOW}Do you want to continue anyway? (y/n):${NORMAL} "
+    read continue_anyway
+    if [ "$continue_anyway" != "y" ]; then
+        echo -e "${RED}Configuration aborted. Please use a server with more RAM.${NORMAL}"
+        exit 1
+    fi
+fi
+
 # Domain Configuration
 echo -e "\n${BOLD}Step 2: Domain Configuration${NORMAL}"
 echo "----------------------------------------"
 echo -e "${BLUE}Please provide your domain information:${NORMAL}"
-DOMAIN=$(prompt_with_default "What is your main domain name? (without www)" "example.com")
-DOMAIN_WWW=$(prompt_with_default "What is your www domain?" "www.${DOMAIN}")
-DOMAIN_EMAIL=$(prompt_with_default "What email should be used for SSL certificates?" "admin@${DOMAIN}")
+echo -e "${YELLOW}Example: If your website is https://example.com, just enter 'example.com'${NORMAL}"
+DOMAIN=$(prompt_with_default "Enter your main domain name (without www)" "example.com")
+
+echo -e "\n${YELLOW}The www subdomain will be automatically configured${NORMAL}"
+DOMAIN_WWW=$(prompt_with_default "Enter your www domain (press Enter to use www.${DOMAIN})" "www.${DOMAIN}")
+
+echo -e "\n${YELLOW}This email will be used for SSL certificate notifications${NORMAL}"
+DOMAIN_EMAIL=$(prompt_with_default "Enter the email address for SSL certificates" "admin@${DOMAIN}")
 
 # Environment Type
 echo -e "\n${BOLD}Step 3: Environment Configuration${NORMAL}"
