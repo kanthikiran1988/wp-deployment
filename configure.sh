@@ -165,6 +165,11 @@ DOMAIN_WWW=$(prompt_with_default "Enter your www domain (press Enter to use www.
 echo -e "\n${YELLOW}This email will be used for SSL certificate notifications${NORMAL}"
 DOMAIN_EMAIL=$(prompt_with_default "Enter the email address for SSL certificates" "admin@${DOMAIN}")
 
+echo -e "\n${YELLOW}WordPress Admin Configuration${NORMAL}"
+WP_ADMIN_USER=$(prompt_with_default "Enter WordPress admin username" "admin")
+WP_ADMIN_PASSWORD=$(openssl rand -base64 12)
+WP_ADMIN_EMAIL=$(prompt_with_default "Enter WordPress admin email" "$DOMAIN_EMAIL")
+
 # Environment Type
 echo -e "\n${BOLD}Step 3: Environment Configuration${NORMAL}"
 echo "----------------------------------------"
@@ -236,6 +241,11 @@ WP_ENVIRONMENT_TYPE=${ENV_TYPE}
 DOMAIN=${DOMAIN}
 DOMAIN_WWW=${DOMAIN_WWW}
 DOMAIN_EMAIL=${DOMAIN_EMAIL}
+
+# WordPress Admin Configuration
+WORDPRESS_ADMIN_USER=${WP_ADMIN_USER}
+WORDPRESS_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
+WORDPRESS_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
 
 # MySQL Configuration
 MYSQL_DATABASE=wordpress_db
@@ -396,7 +406,8 @@ echo -e "${GREEN}✓ PHP configuration generated${NORMAL}"
 echo -e "\n${BOLD}Step 8: Creating Directory Structure${NORMAL}"
 echo "----------------------------------------"
 echo "Creating required directories..."
-mkdir -p {nginx,certbot/{conf,data,logs},wp-content}
+mkdir -p {nginx,certbot/{conf,data,logs},wp-content,wordpress}
+chmod +x wordpress/wp-init.sh
 echo -e "${GREEN}✓ Directories created${NORMAL}"
 
 # Final Summary
@@ -416,5 +427,11 @@ echo -e "${RED}Important:${NORMAL}"
 echo "• Keep your .env file secure - it contains sensitive information"
 echo "• Make sure to backup your configuration files"
 echo "• For production deployment, review security settings"
+echo
+echo -e "${YELLOW}WordPress Admin Credentials (SAVE THESE):${NORMAL}"
+echo "• Username: ${WP_ADMIN_USER}"
+echo "• Password: ${WP_ADMIN_PASSWORD}"
+echo "• Email: ${WP_ADMIN_EMAIL}"
+echo -e "${RED}Make sure to save these credentials before proceeding!${NORMAL}"
 echo
 echo -e "${BLUE}Need help? Check the README.md file for more information${NORMAL}" 

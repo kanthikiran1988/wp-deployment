@@ -11,10 +11,15 @@ services:
       - WORDPRESS_DB_USER=$MYSQL_USER
       - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
       - WORDPRESS_DB_NAME=$MYSQL_DATABASE
+      - WORDPRESS_ADMIN_USER=$WORDPRESS_ADMIN_USER
+      - WORDPRESS_ADMIN_PASSWORD=$WORDPRESS_ADMIN_PASSWORD
+      - WORDPRESS_ADMIN_EMAIL=$WORDPRESS_ADMIN_EMAIL
+      - WORDPRESS_CONFIG_EXTRA=$WORDPRESS_CONFIG_EXTRA
     volumes:
       - wordpress:/var/www/html
       - ./wp-content:/var/www/html/wp-content
       - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini:ro
+      - ./wordpress/wp-init.sh:/usr/local/bin/wp-init.sh:ro
     networks:
       - wordpress-network
     depends_on:
@@ -26,6 +31,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    command: ["/bin/bash", "-c", "chmod +x /usr/local/bin/wp-init.sh && /usr/local/bin/wp-init.sh"]
 
   db:
     image: mariadb:10.6

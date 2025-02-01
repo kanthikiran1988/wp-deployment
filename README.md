@@ -1,31 +1,44 @@
 # WordPress Docker Production Deployment
 
-A production-ready WordPress deployment setup using Docker with automated configuration, SSL support, and performance optimizations.
+A production-ready WordPress deployment setup using Docker with automated configuration, SSL support, and performance optimizations. This setup includes automatic resource allocation, multi-environment support, and security hardening.
 
 ## 🌟 Features
 
-- **Automated Configuration**: Smart resource allocation based on your server's capabilities
-- **Multi-Environment Support**: Production, Staging, and Development environments
-- **Performance Optimized**:
+- **Smart Configuration**
+  - Automatic resource detection and allocation
+  - Memory optimization for MySQL, PHP, and Nginx
+  - Environment-specific configurations (Production/Staging/Development)
+
+- **Performance Optimizations**
   - Redis object caching
-  - PHP OpCache configuration
+  - PHP OpCache with JIT compilation
   - MySQL/MariaDB tuning
-  - Nginx optimizations
-- **Security Focused**:
+  - Nginx with FastCGI caching
+  - Automatic resource allocation based on server capabilities
+
+- **Security Features**
   - Automatic SSL certificate management with Let's Encrypt
+  - WordPress security keys auto-generation
   - Secure PHP and MySQL configurations
-  - WordPress security hardening
-- **Scalable Architecture**:
-  - Separate containers for each service
+  - HTTP/2 support
+  - Automatic admin credential management
+
+- **High Availability**
+  - Health checks for all services
+  - Automatic container restarts
   - Persistent data volumes
-  - Easy backup and restore
+  - Regular backup system
 
 ## 📋 Prerequisites
 
 - Docker (version 20.10.0 or higher)
 - Docker Compose (version 2.0.0 or higher)
-- A domain name pointed to your server
-- Open ports 80 and 443 on your firewall
+- Domain name pointed to your server
+- Open ports 80 and 443
+- Minimum recommended specs:
+  - 2GB RAM (minimum)
+  - 2 CPU cores
+  - 20GB storage
 
 ## 🚀 Quick Start
 
@@ -39,39 +52,46 @@ A production-ready WordPress deployment setup using Docker with automated config
    ```bash
    ./configure.sh
    ```
-   This script will:
+   The script will:
    - Detect your server resources
-   - Configure optimal settings for your hardware
-   - Generate all necessary configuration files
-   - Set up directory structure
+   - Ask for domain information
+   - Configure WordPress admin credentials
+   - Generate secure passwords and keys
+   - Create optimized configurations for all services
 
 3. Initialize SSL certificates:
    ```bash
    ./init-letsencrypt.sh
    ```
 
-4. Start the containers:
+4. Start the services:
    ```bash
    docker-compose up -d
    ```
 
-## 🏗️ Architecture
+5. Access your WordPress site at https://your-domain.com
 
-### Container Structure
+## 🏗️ System Architecture
+
+### Components
+
 - **WordPress (PHP-FPM)**
-  - PHP 8.1 with optimized configuration
-  - Custom php.ini based on server resources
-  - OpCache and JIT enabled
+  - PHP 8.1 with OpCache and JIT
+  - Custom php.ini optimized for your server
+  - WP-CLI for management
+  - Automated initialization
 
 - **Nginx**
-  - Reverse proxy with SSL termination
-  - Static file serving
-  - Optimized for WordPress
+  - HTTP/2 support
+  - FastCGI caching
+  - Static file optimization
+  - SSL termination
 
 - **MariaDB**
   - Optimized InnoDB settings
-  - Performance tuning based on available memory
-  - Secure default configuration
+  - Performance tuning
+  - Automated backups
+  - Secure defaults
 
 - **Redis**
   - Object caching
@@ -79,29 +99,29 @@ A production-ready WordPress deployment setup using Docker with automated config
   - Persistent storage
 
 - **Certbot**
-  - Automatic SSL certificate management
+  - Automatic SSL management
   - Certificate renewal
+  - Staging/Production modes
 
 ### Directory Structure
 ```
 .
-├── docker-compose.yml      # Main Docker Compose configuration
-├── .env                    # Environment variables
+├── docker-compose.yml      # Main Docker configuration
+├── .env                    # Environment variables (auto-generated)
 ├── configure.sh            # Configuration script
-├── init-letsencrypt.sh    # SSL initialization script
+├── init-letsencrypt.sh    # SSL initialization
 ├── backup.sh              # Backup script
+├── wordpress/
+│   └── wp-init.sh        # WordPress initialization
 ├── nginx/
-│   └── wordpress.conf     # Nginx configuration
+│   └── wordpress.conf    # Nginx configuration
 ├── php/
-│   └── php.ini           # PHP configuration
+│   └── php.ini          # PHP configuration
 ├── mysql/
 │   └── conf.d/
-│       └── my.cnf        # MySQL configuration
-├── certbot/
-│   ├── conf/             # SSL certificates
-│   ├── data/            # Let's Encrypt verification
-│   └── logs/            # Certbot logs
-└── wp-content/           # WordPress content directory
+│       └── my.cnf       # MySQL configuration
+├── certbot/             # SSL certificates
+└── wp-content/          # WordPress content
 ```
 
 ## ⚙️ Configuration
@@ -109,60 +129,56 @@ A production-ready WordPress deployment setup using Docker with automated config
 ### Environment Types
 
 1. **Production**
-   - SSL enabled
+   - SSL enabled and enforced
    - Caching enabled
    - Debug disabled
-   - Performance optimized
+   - Maximum security
 
 2. **Staging**
    - SSL in staging mode
-   - Caching enabled
+   - Similar to production
    - Limited debugging
-   - Production-like settings
 
 3. **Development**
    - SSL optional
-   - Caching optional
-   - Full debugging
-   - Development-friendly settings
+   - Debug enabled
+   - Development tools
 
 ### Resource Allocation
 
-The configuration script automatically allocates resources based on your server's capabilities:
+Resources are automatically allocated based on your server's capabilities:
 
 - **MySQL**: 40% of available memory
   - InnoDB buffer pool: 50% of MySQL memory
   - Query cache: 5% of MySQL memory
-  - Other buffers: Proportionally allocated
 
 - **PHP**: 30% of available memory
   - OpCache: Optimized for WordPress
-  - Upload limits: Automatically calculated
-  - Memory limits: Based on available resources
+  - Upload limits: Auto-calculated
+  - JIT enabled
 
-- **Nginx**: Optimized based on CPU cores
+- **Nginx**: Based on CPU cores
   - Worker processes: Equal to CPU cores
   - Worker connections: 1024 × CPU cores
-  - Client max body size: Calculated from available memory
 
 ## 🔒 Security
 
-### SSL Certificates
-- Automatic generation and renewal via Let's Encrypt
-- HTTPS enforced by default
+### SSL/TLS
+- Automatic certificate management
+- HTTPS enforced
 - HSTS enabled
-- Modern SSL configuration
+- Modern cipher suites
 
 ### WordPress Security
-- Automatic updates disabled (managed through Docker)
-- Security keys auto-generated
-- File permissions properly set
-- PHP functions restricted
+- Auto-generated security keys
+- Disabled file editing
+- Limited login attempts
+- Secure admin credentials
 
 ### Database Security
-- Random strong passwords generated
+- Random strong passwords
 - Remote root access disabled
-- Secure default configuration
+- Secure defaults
 
 ## 💾 Backup and Restore
 
@@ -172,11 +188,11 @@ Run the backup script:
 ./backup.sh
 ```
 
-This will:
-- Backup the database
-- Backup wp-content directory
-- Compress backups
-- Maintain backup rotation
+Features:
+- Database dumps
+- File backups
+- Configurable retention
+- Compression
 
 ### Manual Backup
 Database:
@@ -189,28 +205,14 @@ Files:
 tar -czf wp-content-backup.tar.gz wp-content/
 ```
 
-### Restore
-Database:
-```bash
-docker-compose exec -T db mysql -u[user] -p[password] wordpress < backup.sql
-```
-
-Files:
-```bash
-tar -xzf wp-content-backup.tar.gz
-```
-
 ## 🔧 Maintenance
 
-### Updating WordPress
-1. Update image version in docker-compose.yml
-2. Pull new images:
+### Updates
+WordPress core, themes, and plugins:
 ```bash
-docker-compose pull
-```
-3. Restart containers:
-```bash
-docker-compose up -d
+docker-compose exec wordpress wp core update
+docker-compose exec wordpress wp plugin update --all
+docker-compose exec wordpress wp theme update --all
 ```
 
 ### Monitoring
@@ -219,14 +221,15 @@ View logs:
 # All containers
 docker-compose logs -f
 
-# Specific container
+# Specific service
 docker-compose logs -f [wordpress|db|nginx|redis]
 ```
 
-### Common Tasks
-- **Restart services**: `docker-compose restart [service]`
-- **Check status**: `docker-compose ps`
-- **View resource usage**: `docker stats`
+### Health Checks
+```bash
+docker-compose ps
+docker stats
+```
 
 ## 🔍 Troubleshooting
 
@@ -234,23 +237,26 @@ docker-compose logs -f [wordpress|db|nginx|redis]
 
 1. **SSL Certificate Issues**
    - Check DNS settings
-   - Verify port 80/443 accessibility
+   - Verify ports 80/443
    - Review certbot logs
 
-2. **Database Connection Errors**
-   - Verify credentials in .env
-   - Check database logs
-   - Ensure container is running
+2. **Database Connection**
+   - Check credentials in .env
+   - Verify database logs
+   - Check network connectivity
 
 3. **Performance Issues**
    - Review resource allocation
-   - Check PHP and MySQL logs
-   - Monitor container resources
+   - Check PHP/MySQL logs
+   - Monitor cache hit rates
 
 ### Debug Mode
-To enable WordPress debug mode:
+Enable WordPress debugging:
 1. Set WORDPRESS_DEBUG=1 in .env
-2. Restart containers
+2. Restart containers:
+```bash
+docker-compose restart wordpress
+```
 
 ## 📚 Additional Resources
 
