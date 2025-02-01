@@ -33,14 +33,16 @@ prompt_with_default() {
         
         if [ -z "$response" ]; then
             echo -e "${BLUE}Using default value:${NORMAL} ${default}"
+            echo "${default}" >&2
             response="$default"
             break
         else
             echo -e "${BLUE}Using value:${NORMAL} ${response}"
+            echo "${response}" >&2
             break
         fi
     done
-    echo "$response"
+    printf "%s" "$response"
 }
 
 # Function to prompt for environment type with clear options
@@ -233,62 +235,61 @@ echo -e "\n${BOLD}Step 7: Generating Configuration Files${NORMAL}"
 echo "----------------------------------------"
 
 echo -e "Generating .env file..."
-cat > .env << EOL
-# Environment Type
-WP_ENVIRONMENT_TYPE=${ENV_TYPE}
-
-# Domain Configuration
-DOMAIN=${DOMAIN}
-DOMAIN_WWW=${DOMAIN_WWW}
-DOMAIN_EMAIL=${DOMAIN_EMAIL}
-
-# WordPress Admin Configuration
-WORDPRESS_ADMIN_USER=${WP_ADMIN_USER}
-WORDPRESS_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
-WORDPRESS_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
-
-# MySQL Configuration
-MYSQL_DATABASE=wordpress_db
-MYSQL_USER=wordpress_user
-MYSQL_PASSWORD=$(openssl rand -base64 24)
-MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)
-
-# WordPress Configuration
-WORDPRESS_DEBUG=$([ "$ENV_TYPE" = "development" ] && echo "1" || echo "0")
-WORDPRESS_CONFIG_EXTRA=
-  define('WP_MEMORY_LIMIT', '${PHP_SETTINGS%% *}');
-  define('WP_MAX_MEMORY_LIMIT', '$((TOTAL_MEM / 2))M');
-  define('AUTOMATIC_UPDATER_DISABLED', true);
-  define('WP_CACHE', true);
-  define('WP_REDIS_HOST', 'redis');
-  define('WP_REDIS_PORT', 6379);
-
-# SSL Configuration
-SSL_STAGING=$([ "$ENV_TYPE" = "production" ] && echo "0" || echo "1")
-SSL_KEY_SIZE=4096
-
-# Nginx Configuration
-NGINX_RESOLVER=8.8.8.8 8.8.4.4
-NGINX_RESOLVER_TIMEOUT=5s
-SSL_SESSION_TIMEOUT=1d
-SSL_SESSION_CACHE=shared:SSL:50m
-NGINX_HTTP_PORT=80
-NGINX_HTTPS_PORT=443
-$(echo "$NGINX_SETTINGS" | grep "client_max_body_size")
-
-# PHP Configuration
-$(echo "$PHP_SETTINGS")
-PHP_MAX_INPUT_VARS=3000
-
-# Backup Configuration
-BACKUP_RETENTION_DAYS=7
-BACKUP_PATH=/backup
-
-# Security Configuration (auto-generated)
-$(for key in AUTH_KEY SECURE_AUTH_KEY LOGGED_IN_KEY NONCE_KEY AUTH_SALT SECURE_AUTH_SALT LOGGED_IN_SALT NONCE_SALT; do
-    echo "${key}=$(openssl rand -base64 48)"
-done)
-EOL
+{
+    echo "# Environment Type"
+    echo "WP_ENVIRONMENT_TYPE=${ENV_TYPE}"
+    echo
+    echo "# Domain Configuration"
+    echo "DOMAIN=${DOMAIN}"
+    echo "DOMAIN_WWW=${DOMAIN_WWW}"
+    echo "DOMAIN_EMAIL=${DOMAIN_EMAIL}"
+    echo
+    echo "# WordPress Admin Configuration"
+    echo "WORDPRESS_ADMIN_USER=${WP_ADMIN_USER}"
+    echo "WORDPRESS_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}"
+    echo "WORDPRESS_ADMIN_EMAIL=${WP_ADMIN_EMAIL}"
+    echo
+    echo "# MySQL Configuration"
+    echo "MYSQL_DATABASE=wordpress_db"
+    echo "MYSQL_USER=wordpress_user"
+    echo "MYSQL_PASSWORD=$(openssl rand -base64 24)"
+    echo "MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)"
+    echo
+    echo "# WordPress Configuration"
+    echo "WORDPRESS_DEBUG=$([ "$ENV_TYPE" = "development" ] && echo "1" || echo "0")"
+    echo "WORDPRESS_CONFIG_EXTRA=define('WP_MEMORY_LIMIT', '${PHP_SETTINGS%% *}');\\n\
+  define('WP_MAX_MEMORY_LIMIT', '$((TOTAL_MEM / 2))M');\\n\
+  define('AUTOMATIC_UPDATER_DISABLED', true);\\n\
+  define('WP_CACHE', true);\\n\
+  define('WP_REDIS_HOST', 'redis');\\n\
+  define('WP_REDIS_PORT', 6379);"
+    echo
+    echo "# SSL Configuration"
+    echo "SSL_STAGING=$([ "$ENV_TYPE" = "production" ] && echo "0" || echo "1")"
+    echo "SSL_KEY_SIZE=4096"
+    echo
+    echo "# Nginx Configuration"
+    echo "NGINX_RESOLVER=8.8.8.8 8.8.4.4"
+    echo "NGINX_RESOLVER_TIMEOUT=5s"
+    echo "SSL_SESSION_TIMEOUT=1d"
+    echo "SSL_SESSION_CACHE=shared:SSL:50m"
+    echo "NGINX_HTTP_PORT=80"
+    echo "NGINX_HTTPS_PORT=443"
+    echo "NGINX_CLIENT_MAX_BODY_SIZE=$((TOTAL_MEM / 10))M"
+    echo
+    echo "# PHP Configuration"
+    echo "${PHP_SETTINGS}"
+    echo "PHP_MAX_INPUT_VARS=3000"
+    echo
+    echo "# Backup Configuration"
+    echo "BACKUP_RETENTION_DAYS=7"
+    echo "BACKUP_PATH=/backup"
+    echo
+    echo "# Security Configuration (auto-generated)"
+    for key in AUTH_KEY SECURE_AUTH_KEY LOGGED_IN_KEY NONCE_KEY AUTH_SALT SECURE_AUTH_SALT LOGGED_IN_SALT NONCE_SALT; do
+        echo "${key}=$(openssl rand -base64 48)"
+    done
+} > .env
 echo -e "${GREEN}✓ .env file generated${NORMAL}"
 
 echo -e "Generating MySQL configuration..."
