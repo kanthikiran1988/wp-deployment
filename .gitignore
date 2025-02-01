@@ -1,0 +1,93 @@
+# Environment variables and secrets
+.env
+
+# WordPress core files (since we're using Docker image)
+wordpress/*
+!wordpress/wp-init.sh
+
+# WordPress content directory (except custom themes and plugins)
+wp-content/*
+!wp-content/themes/
+!wp-content/plugins/
+!wp-content/mu-plugins/
+wp-content/themes/*
+wp-content/plugins/*
+wp-content/mu-plugins/*
+!wp-content/themes/custom*/
+!wp-content/plugins/custom*/
+!wp-content/mu-plugins/custom*/
+
+# WordPress uploads
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/backups/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/uploads/
+wp-content/blogs.dir/
+
+# SSL certificates and keys
+certbot/conf/*
+certbot/data/*
+certbot/logs/*
+
+# Database data
+mysql/data/
+dbdata/
+
+# Redis data
+redis_data/
+
+# Nginx logs
+nginx/logs/*
+
+# Log files
+*.log
+logs/
+log/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Packages
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Backup files
+*~
+*.bak
+*.backup
+*.old 
