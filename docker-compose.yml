@@ -11,16 +11,22 @@ services:
       - WORDPRESS_DB_USER=${MYSQL_USER}
       - WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
       - WORDPRESS_DB_NAME=${MYSQL_DATABASE}
-      - WORDPRESS_CONFIG_EXTRA=${WORDPRESS_CONFIG_EXTRA}
       - WORDPRESS_DEBUG=${WORDPRESS_DEBUG}
       - WORDPRESS_ADMIN_USER=${WORDPRESS_ADMIN_USER}
       - WORDPRESS_ADMIN_PASSWORD=${WORDPRESS_ADMIN_PASSWORD}
       - WORDPRESS_ADMIN_EMAIL=${WORDPRESS_ADMIN_EMAIL}
+      - WP_MEMORY_LIMIT=${WP_MEMORY_LIMIT}
+      - WP_MAX_MEMORY_LIMIT=${WP_MAX_MEMORY_LIMIT}
+      - WP_CACHE=${WP_CACHE}
+      - WP_REDIS_HOST=${WP_REDIS_HOST}
+      - WP_REDIS_PORT=${WP_REDIS_PORT}
+      - WP_ENVIRONMENT_TYPE=${WP_ENVIRONMENT_TYPE}
     volumes:
       - ./wordpress:/var/www/html
       - ./wp-content:/var/www/html/wp-content
       - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini:ro
       - ./wordpress/wp-init.sh:/docker-entrypoint-initwp.sh:ro
+      - ./wordpress/wp-config-extra.php:/var/www/html/wp-config-extra.php:ro
     networks:
       - wordpress-network
     depends_on:
@@ -80,7 +86,7 @@ services:
       - ./wp-content:/var/www/html/wp-content:ro
       - ./nginx/conf.d:/etc/nginx/templates:ro
       - ./certbot/conf:/etc/nginx/ssl:ro
-      - ./certbot/data:/var/www/certbot:ro
+      - ./certbot/data:/var/www/certbot
       - ./nginx/logs:/var/log/nginx
     networks:
       - wordpress-network

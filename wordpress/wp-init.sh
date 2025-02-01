@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Wait for MySQL to be ready
 echo "Waiting for MySQL to be ready..."
@@ -18,12 +19,17 @@ if ! wp core is-installed --allow-root; then
     # Install WordPress
     wp core install \
         --url="https://${DOMAIN}" \
-        --title="WordPress Site" \
+        --title="Your Site Title" \
         --admin_user="${WORDPRESS_ADMIN_USER}" \
         --admin_password="${WORDPRESS_ADMIN_PASSWORD}" \
         --admin_email="${WORDPRESS_ADMIN_EMAIL}" \
         --skip-email \
         --allow-root
+
+    # Include extra configuration
+    if [ -f wp-config-extra.php ]; then
+        echo "require_once('wp-config-extra.php');" >> wp-config.php
+    fi
 
     # Install and activate Redis Object Cache plugin
     wp plugin install redis-cache --activate --allow-root
