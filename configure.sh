@@ -24,57 +24,40 @@ setup_docker_permissions() {
         echo -e "${YELLOW}Docker service is not running. Attempting to start...${NORMAL}"
         sudo systemctl start docker
         sleep 2  # Give it a moment to start
-        
-        if ! systemctl is-active --quiet docker; then
-            echo -e "${RED}Failed to start Docker service. Attempting to fix...${NORMAL}"
-            
-            # Reset failed state if any
-            sudo systemctl reset-failed docker.service
-            
-            # Reload daemon and restart
-            sudo systemctl daemon-reload
-            sudo systemctl start docker
-            
-            if ! systemctl is-active --quiet docker; then
-                echo -e "${RED}Error: Cannot start Docker service${NORMAL}"
-                echo "Please check the service status with: systemctl status docker"
-                exit 1
-            fi
-        fi
     fi
 
-    # Check if user is in docker group
+    # Test Docker access with sudo first
+    if ! sudo docker info &>/dev/null; then
+        echo -e "${RED}Error: Cannot connect to Docker daemon even with sudo${NORMAL}"
+        echo "Please check if Docker service is running:"
+        echo "sudo systemctl status docker"
+        exit 1
+    fi
+
+    # Now check if user is in docker group
     if ! groups $USER | grep &>/dev/null '\bdocker\b'; then
-        echo -e "${YELLOW}Adding user to docker group...${NORMAL}"
-        if ! sudo usermod -aG docker $USER; then
-            echo -e "${RED}Failed to add user to docker group${NORMAL}"
-            echo "Please run: sudo usermod -aG docker $USER"
-            echo "Then log out and log back in for changes to take effect."
-            exit 1
-        fi
-        echo -e "${GREEN}✓ User added to docker group${NORMAL}"
-        echo -e "${YELLOW}Please log out and log back in for changes to take effect${NORMAL}"
-        exit 0
-    fi
-
-    # Test Docker access
-    if ! docker info &>/dev/null; then
-        echo -e "${YELLOW}Cannot connect to Docker daemon. Attempting to fix...${NORMAL}"
-        
-        # Try restarting Docker service
-        sudo systemctl restart docker
-        sleep 2  # Give it a moment to restart
-        
+        echo -e "${YELLOW}User is not in docker group. Using sudo for Docker commands...${NORMAL}"
+        # Create a function to use sudo with docker
+        docker() {
+            sudo docker "$@"
+        }
+        export -f docker
+        echo -e "${GREEN}✓ Docker configured to run with sudo${NORMAL}"
+    else
+        # Try normal docker access
         if ! docker info &>/dev/null; then
-            echo -e "${RED}Error: Cannot connect to Docker daemon${NORMAL}"
-            echo "If you just added the docker group, you need to log out and log back in."
-            echo "Otherwise, make sure the Docker daemon is running:"
-            echo "sudo systemctl start docker"
-            exit 1
+            echo -e "${YELLOW}Cannot connect to Docker daemon without sudo. Using sudo for this session...${NORMAL}"
+            # Create a function to use sudo with docker
+            docker() {
+                sudo docker "$@"
+            }
+            export -f docker
+            echo -e "${GREEN}✓ Docker configured to run with sudo${NORMAL}"
+            echo -e "${YELLOW}Note: Log out and log back in for docker group changes to take effect${NORMAL}"
+        else
+            echo -e "${GREEN}✓ Docker permissions are correctly configured${NORMAL}"
         fi
     fi
-    
-    echo -e "${GREEN}✓ Docker permissions are correctly configured${NORMAL}"
 }
 
 # Function to get total system memory in MB
