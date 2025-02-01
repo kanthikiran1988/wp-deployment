@@ -45,33 +45,40 @@ prompt_with_default() {
 
 # Function to prompt for environment type with clear options
 prompt_for_environment() {
-    local env_type
-    while true; do
-        echo -e "\n${YELLOW}➤${NORMAL} Please select your environment type:"
-        echo -e "${BLUE}Available options:${NORMAL}"
-        echo "   1) Production (optimized for performance, SSL enabled)"
-        echo "   2) Staging (testing environment with staging SSL)"
-        echo "   3) Development (debugging enabled, no SSL required)"
-        echo -ne "${GREEN}Please enter 1, 2, or 3 and press Enter [1]:${NORMAL} "
-        read choice
-        
-        case "${choice:-1}" in
-            1) env_type="production"
-               echo -e "${BLUE}Selected:${NORMAL} Production Environment"
-               break
-               ;;
-            2) env_type="staging"
-               echo -e "${BLUE}Selected:${NORMAL} Staging Environment"
-               break
-               ;;
-            3) env_type="development"
-               echo -e "${BLUE}Selected:${NORMAL} Development Environment"
-               break
-               ;;
-            *) echo -e "${RED}Invalid choice. Please select 1, 2, or 3${NORMAL}"
-               ;;
-        esac
-    done
+    local env_type=""
+    
+    echo -e "\n${YELLOW}➤${NORMAL} Please select your environment type:"
+    echo -e "${BLUE}Available options:${NORMAL}"
+    echo "   1) Production (optimized for performance, SSL enabled)"
+    echo "   2) Staging (testing environment with staging SSL)"
+    echo "   3) Development (debugging enabled, no SSL required)"
+    echo -ne "${GREEN}Please enter 1, 2, or 3 and press Enter [1]:${NORMAL} "
+    
+    read -r choice
+    
+    case "${choice:-1}" in
+        1) 
+            env_type="production"
+            echo -e "${BLUE}Selected:${NORMAL} Production Environment"
+            ;;
+        2)
+            env_type="staging"
+            echo -e "${BLUE}Selected:${NORMAL} Staging Environment"
+            ;;
+        3)
+            env_type="development"
+            echo -e "${BLUE}Selected:${NORMAL} Development Environment"
+            ;;
+        *)
+            echo -e "${RED}Invalid choice. Using default: Production${NORMAL}"
+            env_type="production"
+            ;;
+    esac
+    
+    # Add a newline for better formatting
+    echo ""
+    
+    # Return the selected environment type
     echo "$env_type"
 }
 
@@ -161,6 +168,7 @@ DOMAIN_EMAIL=$(prompt_with_default "Enter the email address for SSL certificates
 # Environment Type
 echo -e "\n${BOLD}Step 3: Environment Configuration${NORMAL}"
 echo "----------------------------------------"
+echo -e "${BLUE}Select the environment type for your WordPress installation:${NORMAL}"
 ENV_TYPE=$(prompt_for_environment)
 
 # Database Configuration
